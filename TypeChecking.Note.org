@@ -1,0 +1,79 @@
+#+TITLE: Notes on Type checking through unification
+
+- Paper : https://arxiv.org/pdf/1609.09709.pdf
+
+
+Let Fresh(A[0], ..., A[n]) be a function that add a new metavariable to the context Γ,
+and where the type of the new variable is Γ -> A[0] -> ... -> A[n], if from the context
+is derivable that A[n] is equal to Set, a metavariable, or A[n] is any type not dependent
+on A[n - 1], A[n - 1] is written as a plain type, like A -> Set for A[n - 1] -> A[n], otherwise it will be written as (y : A[n - 1]), like (y : A[n - 1]) -> Set, because we
+dont know if Set is dependent on a value of type A[n - 1], 'y' is a new variable not used
+on the context. Fresh will return a new metavariable, and each successive appearance will
+be automatically aplied to Γ.
+
+Given Σ a signature and Γ a context, calling Fresh will cause:
+
+α : Γ -> Set = Fresh(Γ, Set) 
+
+Σ = Σ, α : Γ -> Set
+
+is a new variable is added to Γ of type α, lets say 'y', then a new call to fresh will
+return:
+
+β : Γ -> (y : α) -> Set = Fresh(Γ, (y : α), Set)
+
+Σ = Σ, α : Γ -> Set, β : Γ -> (y : α) -> Set
+
+NOTE: Γ in Fresh is the original context, without (y : a), otherwise it will be just
+			Fresh(Γ, Set).
+
+
+Typechecking Examples:
+
+add : Nat -> Nat -> Nat
+
+· ; x : Nat ⊢ add x : Nat
+
+Elaborate(Σ, Γ, add x : Nat)
+|
+| -- This call will create two new calls, one for 'add' and another for 'x',
+| -- 'add' needs to be a function because its current use, and the domain
+| -- needs to be of the same type as the input 'x' that is Nat from context.
+|
+|
+|---- Elaborate(Σ, Γ, add) // knowing that its a function of domain Nat
+|
+|			 --	This call will make us call Fresh for a domain and codomain,
+|			 -- the domain being α : Nat -> Nat = Fresh((x : Nat), Nat), and
+|			 -- codomain β : (x : Nat) -> Nat -> Set = Fresh((x : Nat), Nat, Set),
+|			 -- remember that α is of Nat -> Nat and not (x : Nat) -> Nat because
+|			 -- we known that Nat is not dependent on 'x', β is of
+|			 -- (x : Nat) -> Nat -> Set because we do not known yet if the resulting
+|			 -- type of kind Set is dependent on 'x'. From α and β we form δ as
+|			 -- the type of add as δ : Γ -> (y : α Γ) -> β Γ y = Fresh(Γ, (y : α Γ), β Γ y)
+|			 -- remember that variables from Fresh are automatically aplied
+|			 -- to the current context, so Γ -> (y : α Γ) -> β Γ y is equivalent
+|			 -- to  Γ -> (y : α) -> β, also note that y is automatically added
+|			 -- to the context.
+|
+|
+|---- Elaborate(Σ, Γ, x) // knowing that x have the same type as the domain of add
+|
+|			 -- γ : Γ -> α = Fresh(Γ, α) ==  (x : Nat) -> α x = Fresh((x : Nat), α x).
+|			 -- remember, successive apearences of a metavariable are automatically
+|			 -- applied to Γ. 
+|
+|
+|	-- To end up, finally elaborate add x : Nat, we create
+| -- ζ : Γ -> Nat = Fresh((x : Nat), Nat) == ζ : Nat -> Nat 
+
+
+So we end up with 
+
+Σ = {
+  α : Nat -> Nat,
+  β : (x : Nat) -> Nat -> Set,
+  δ : (x : Nat) -> (y : α x) -> β x y,
+  γ : (x : Nat) -> α x
+  ζ : Nat -> Nat
+}
