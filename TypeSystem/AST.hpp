@@ -26,8 +26,6 @@
  * [3] What every programmer should know about memory - https://lwn.net/Articles/250967/
  */
 
-
-
 typedef unsigned long long key;
 
 #define INVALID_KEY ((key)-1)
@@ -55,16 +53,10 @@ struct ASTNode {
   #define util_idx(id) ((char)2 << 6 | id)
 
 	enum ASTKind : unsigned char {
-    // types
     AST_TYPE_UNSPECIFIED          = type_idx(1),
     AST_TYPE_ANY                  = type_idx(2),
     AST_TYPE_ARROW                = type_idx(3),
     AST_TYPE_SYMBOL               = type_idx(4),
-
-		// TODO: AST_TYPE_TUPLE
-		// TODO: AST_TYPE_UNION
-		// TODO: AST_TYPE_DEPENDENT_TUPLE
-		// TODO: AST_TYPE_DEPENDENT_UNION
 
 		// terms
     AST_TERM_SYMBOL               = term_idx(1),
@@ -76,14 +68,6 @@ struct ASTNode {
     AST_TERM_BINARY_OPERATION     = term_idx(7),
     AST_TERM_INTEGER_LITERAL      = term_idx(9),
     AST_TERM_FLOW_IF_ELSE         = term_idx(10),
-    // AST_TERM_LOOP_WHILE           = term_idx(12),
-    // AST_TERM_LOOP_DO_WHILE        = term_idx(13),
-		// AST_TERM_LOOP_FOR             = term_idx(14),
-
-		// TODO: AST_TERM_TUPLE
-		// TODO: AST_TERM_UNION
-		// TODO: AST_TERM_DEPENDENT_TUPLE
-		// TODO: AST_TERM_DEPENDENT_UNION
 
     // utils
 		AST_TERMS_SEQUENCE             = util_idx(1),
