@@ -2,7 +2,6 @@
 #define WIZARD_TOKEN_HPP
 
 #include "utils/types.hpp"
-#include "utils/config.hpp"
 
 #include <iterator>
 #include <vector>

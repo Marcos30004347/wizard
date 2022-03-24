@@ -1,6 +1,8 @@
 
-#include "utils/config.hpp"
 #include "utils/types.hpp"
+
+#include "utils/stack.hpp"
+#include "utils/avltree.hpp"
 
 #include "parser/lexer.hpp"
 
@@ -18,17 +20,36 @@ struct ASTDataKey {
 };
 
 enum ASTTag : u8 {
-  AST_VARIABLE,              // Tag for variable types — x, y, z
-  AST_LAMBDA_ABSTRACTION,    // Tag for lambda abstraction — λx:α.term
-  AST_LAMBDA_ARG_BINDING,    // Tag for lambda abstraction arguments — λx:α
-  AST_LAMBDA_APPLICATION,    // Tag for lambda applications — x y
-  AST_DEPENDENT_PI_TYPE,     // Tag for dependent pi types — Πx:α.β
-  AST_TYPE_VARIABLE,         // Tag for type variables — α, β, γ
-  AST_VARIABLE_TYPE_BINDING, // Tag for type assignments — x : α
-  AST_LET_ASSIGNMENT,        // Tag for untyped let assignments — let x := term
+  // Tag for variable types — x, y, z 
+  AST_VARIABLE,
+	
+	// Tag for lambda abstraction — λx:α.term 
+  AST_LAMBDA_ABSTRACTION,
+	
+	// Tag for lambda applications — x y 
+	AST_LAMBDA_APPLICATION,
+	
+	// Tag for untyped let assignments — let x := term 
+  AST_LET_ASSIGNMENT,
 
+	// Tag for dependent pi types — Πx:α.β 
+  AST_TYPE_DEPENDENT_PI,
+
+	// Tag for arrow types — α → β
+	AST_TYPE_ARROW,
+	
+	// Tag for type variables — α, β, γ 
+  AST_TYPE_VARIABLE,
+
+	// Tag for type assignments — x : α 
+  AST_TYPE_BINDING,
+
+	// Tag for sort of types — * 
+	AST_KIND_TYPE,
+	
   // Utils
   AST_UTIL_LIST,      // Tag for internal use, represent lists of Nodes.
+
   AST_UTIL_LIST_END,  // Tag for internal use, represent the end of a list.
 };
 
@@ -45,16 +66,6 @@ struct ASTNodeData {
   ASTNodeKey right_child;
 };
 
-struct IndicesStack {
-	// Maximum capacity of the stack.
-	const static u8 capacity = 32;
-
-	// Top indice of the stack.
-	u8 top = 0;
-
-	// Stack data.
-	u8 stack[capacity];
-};
 
 struct ASTNodeBucket {
   // Maximum Nodes on bucket.
@@ -72,10 +83,7 @@ struct ASTNodeBucket {
   // Array of data keys for Nodes.
   // this is a key to the 'data_bucket'
   // on the main AST data structure.
-  ASTDataKey childs_key[capacity];
-
-	// Stack of free indices between 0 and top.
-  IndicesStack fragIndices;
+  ASTDataKey data[capacity];
 };
 
 struct ASTDataBucket {
@@ -87,12 +95,13 @@ struct ASTDataBucket {
 	
   // Array of data for Nodes.
   ASTNodeData data[capacity];
-
-	// Stack of free indices between 0 and top.
-	IndicesStack fragIndices;
 };
 
 struct AST {
+	// NOTE(marcos): Maybe it will be better to
+	// use a self balaned binary tree to store
+	// the buckets internally.
+
 	// ast node buckets array.
 	std::vector<ASTNodeBucket*> node_buckets;
 
@@ -106,17 +115,20 @@ void DestroyAST(AST *ast);
 
 ASTNodeData GetASTNodeData(AST *tree, ASTNodeKey key);
 
+ASTTag GetASTNodeTag(AST* tree, ASTNodeKey key);
+
 ASTNodeKey CreateVariableNode(AST *tree, ASTNodeInfo info);
 
 ASTNodeKey CreateLetAssignmentNode(AST* tree, ASTNodeInfo info, ASTNodeKey var, ASTNodeKey term);
 
-ASTNodeKey CreateVariableTypeBinding(AST *tree, ASTNodeInfo indo, ASTNodeKey var, ASTNodeInfo type);
+ASTNodeKey CreateTypeBindingNode(AST *tree, ASTNodeInfo indo, ASTNodeKey term, ASTNodeInfo type);
 
-ASTNodeKey CreateLambdaAbstractionNode(AST *tree, ASTNodeInfo info, ASTNodeKey arg_binding, ASTNodeKey body);
-
-ASTNodeKey CreateLambdaArgumentBindingNode(AST *tree, ASTNodeInfo info, ASTNodeKey var, ASTNodeKey type);
+ASTNodeKey CreateLambdaAbstractionNode(AST *tree, ASTNodeInfo info, ASTNodeKey arg, ASTNodeKey body);
 
 ASTNodeKey CreateLambdaApplicationNode(AST *tree, ASTNodeInfo info, ASTNodeKey lambda, ASTNodeKey argument);
 
+ASTNodeKey CreateKindTypeNode(AST *tree, ASTNodeInfo info);
 
+ASTNodeKey CreateDependentPiTypeNode(AST *tree, ASTNodeInfo info, ASTNodeKey first, ASTNodeKey second);
 
+ASTNodeKey CreateVariableTypeNode(AST *tree, ASTNodeInfo info);
